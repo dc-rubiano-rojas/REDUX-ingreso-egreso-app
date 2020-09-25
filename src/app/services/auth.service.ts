@@ -3,26 +3,50 @@ import { Injectable } from '@angular/core';
 import 'firebase/firestore';
 import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFirestore } from '@angular/fire/firestore';
-import { map } from 'rxjs/operators';
+
+import { AppState } from '../app.reducer';
+import { Store } from '@ngrx/store';
+import * as authActions from '../auth/auth.actions';
+
+import { map, subscribeOn } from 'rxjs/operators';
 import { Usuario } from '../models/usuario.model';
+import { Subscription } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
+  userSubscription: Subscription;
+  userSubs: Subscription;
+
   constructor(public auth: AngularFireAuth,
-              public firestore: AngularFirestore) { }
+              private firestore: AngularFirestore,
+              private store: Store<AppState>) { }
 
   // Este metedo (authState) se va a encargar de avisar cuando tengamos
   // algun cambio con la autenticacion login logout.
   // si quiere entrar a una ruta y no esta autenticado
   // decir si la puede ver o no
   initAuthListener() {
+
     this.auth.authState.subscribe( fuser => {
-      console.log(fuser);
-      console.log(fuser?.uid);
-      console.log(fuser?.email);
+      if (fuser) {
+        // Existe
+        this.userSubscription = this.firestore.doc(`${fuser.uid}/usuario`).valueChanges()
+            .subscribe( (firestoreUser: any) => {
+
+              console.log({firestoreUser});
+
+              const user = Usuario.fromFirebase(firestoreUser);
+              this.store.dispatch( authActions.setUser({user}));
+            });
+      } else {
+        // No existe
+        this.userSubscription.unsubscribe();
+        // this.userSubs.unsubscribe();
+        this.store.dispatch( authActions.unSetUser() );
+      }
     });
   }
 
