@@ -45,8 +45,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     // Cuando el usuario cierre sesion y salga del dashboard
     // se destruya la subscripcion
-    this.ingresosSubscription.unsubscribe();
-    this.userSubscription.unsubscribe();
+    this.ingresosSubscription?.unsubscribe();
+    this.userSubscription?.unsubscribe();
   }
 
 }
